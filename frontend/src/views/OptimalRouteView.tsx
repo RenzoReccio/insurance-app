@@ -203,7 +203,7 @@ export const OptimalRouteView: React.FC = () => {
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2))',
+                background: 'linear-gradient(135deg, rgba(8, 85, 196, 0.12), rgba(234, 12, 144, 0.12))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -390,7 +390,7 @@ export const OptimalRouteView: React.FC = () => {
                   fontSize: '11.5px',
                   padding: '2px 8px',
                   borderRadius: '12px',
-                  background: 'rgba(6, 182, 212, 0.15)',
+                  background: 'rgba(8, 85, 196, 0.10)',
                   color: 'var(--brand-cyan)',
                   fontWeight: 600,
                 }}
@@ -421,8 +421,8 @@ export const OptimalRouteView: React.FC = () => {
                         ? '1px solid var(--brand-cyan)'
                         : '1px solid var(--border-color)',
                       background: isSelected
-                        ? 'rgba(6, 182, 212, 0.18)'
-                        : 'rgba(255, 255, 255, 0.03)',
+                        ? 'rgba(8, 85, 196, 0.12)'
+                        : 'var(--bg-surface)',
                       color: isSelected ? 'var(--brand-cyan)' : 'var(--text-secondary)',
                       display: 'flex',
                       alignItems: 'center',
@@ -617,7 +617,7 @@ export const OptimalRouteView: React.FC = () => {
                     style={{
                       fontSize: '12px',
                       color: 'var(--brand-cyan)',
-                      background: 'rgba(6, 182, 212, 0.1)',
+                      background: 'rgba(8, 85, 196, 0.10)',
                       padding: '4px 10px',
                       borderRadius: '12px',
                       display: 'flex',
@@ -726,19 +726,19 @@ export const OptimalRouteView: React.FC = () => {
                             alignItems: 'center',
                             gap: '6px',
                             background: isOrigin
-                              ? 'rgba(6, 182, 212, 0.2)'
+                              ? 'rgba(8, 85, 196, 0.12)'
                               : isTarget
-                              ? 'rgba(239, 68, 68, 0.2)'
-                              : 'rgba(255, 255, 255, 0.05)',
+                              ? 'rgba(234, 12, 144, 0.12)'
+                              : 'var(--bg-surface-elevated)',
                             border: isOrigin
-                              ? '1px solid var(--brand-cyan)'
+                              ? '1px solid var(--color-primary)'
                               : isTarget
-                              ? '1px solid #ef4444'
+                              ? '1px solid var(--color-accent)'
                               : '1px solid var(--border-color)',
                             color: isOrigin
-                              ? 'var(--brand-cyan)'
+                              ? 'var(--color-primary)'
                               : isTarget
-                              ? '#fca5a5'
+                              ? 'var(--color-accent)'
                               : 'var(--text-primary)',
                           }}
                         >
@@ -790,7 +790,7 @@ export const OptimalRouteView: React.FC = () => {
                   width: '56px',
                   height: '56px',
                   borderRadius: '50%',
-                  background: 'rgba(6, 182, 212, 0.1)',
+                  background: 'rgba(8, 85, 196, 0.10)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

@@ -50,11 +50,12 @@ export const DynamicDataTable: React.FC<DynamicDataTableProps> = ({ items }) => 
                     <span
                       style={{
                         fontSize: '11px',
+                        fontWeight: 600,
                         padding: '2px 8px',
                         borderRadius: '4px',
-                        background: 'rgba(139, 92, 246, 0.15)',
-                        color: 'var(--brand-purple)',
-                        border: '1px solid rgba(139, 92, 246, 0.3)',
+                        background: 'rgba(234, 12, 144, 0.10)',
+                        color: 'var(--color-accent)',
+                        border: '1px solid rgba(234, 12, 144, 0.25)',
                       }}
                     >
                       Plantilla / Def
@@ -63,11 +64,12 @@ export const DynamicDataTable: React.FC<DynamicDataTableProps> = ({ items }) => 
                     <span
                       style={{
                         fontSize: '11px',
+                        fontWeight: 600,
                         padding: '2px 8px',
                         borderRadius: '4px',
-                        background: 'rgba(6, 182, 212, 0.12)',
-                        color: 'var(--brand-cyan)',
-                        border: '1px solid rgba(6, 182, 212, 0.25)',
+                        background: 'rgba(8, 85, 196, 0.10)',
+                        color: 'var(--color-primary)',
+                        border: '1px solid rgba(8, 85, 196, 0.25)',
                       }}
                     >
                       Input Payload
