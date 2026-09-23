@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: insurance-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: insurance_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U postgres -d insurance_db' ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  node-backend:
+    build:
+      context: ./node-backend
+      dockerfile: Dockerfile
+    container_name: insurance-node-backend
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: insurance_db
+      DB_SYNCHRONIZE: 'true'
+      DB_LOGGING: 'false'
+      JWT_SECRET: evolution-secret-key-2026-very-secure
+      JWT_EXPIRES_IN: 86400
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  golang-backend:
+    build:
+      context: ./golang-backend
+      dockerfile: Dockerfile
+    container_name: insurance-golang-backend
+    restart: always
+    ports:
+      - '8080:8080'
+    environment:
+      PORT: 8080
+      JWT_SECRET: evolution-secret-key-2026-very-secure
+    healthcheck:
+      test: [ 'CMD-SHELL', 'wget -qO- http://localhost:8080/health || exit 1' ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: insurance-frontend
+    restart: always
+    ports:
+      - '5173:80'
+    depends_on:
+      - node-backend
+      - golang-backend
+
+volumes:
+  pgdata:
