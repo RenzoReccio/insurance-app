@@ -54,13 +54,15 @@ Diseñado para la iniciativa **Evolution (Endosos Sencillos)**. Resuelve el mape
   5. **Repository Layer (TypeORM)**: Acceso a entidades de PostgreSQL.
   6. **Publisher Layer**: Publicación de eventos de dominio (`ConsoleEventPublisher` / interfaces desacopladas).
 
-- **Modelo Relacional de Plantillas Dinámicas:**
+- **Modelo Relacional de Plantillas Dinámicas (ERD):**
   Permite agregar nuevos productos y tipos de endoso sin modificar código fuente:
   - `products`: Catálogo de productos (ej. `Rumbo`).
   - `endorsement_types`: Catálogo de endosos (ej. `CambioFrecuencia`).
   - `endorsement_templates`: Asociación producto-endoso y configuración de evento raíz.
   - `template_field_configs`: Diccionario de campos `dynamicData` (`source_field`, `default_value`, `display_order`, `is_required`).
   - `template_event_configs`: Definición de eventos aplicados (`eventAppliedEntities`).
+
+  ![Diagrama Entidad-Relación (ERD)](./ERD.png)
 
 ---
 
@@ -362,6 +364,7 @@ npm run build
 ```
 insurance-app/
 ├── docker-compose.yml             # Orquestación multicontenedor (Postgres, Node, Go, Frontend)
+├── ERD.png                        # Diagrama Entidad-Relación (Base de datos PostgreSQL)
 ├── README.md                      # Documentación integral del proyecto
 ├── frontend/                      # Single Page Application (React + Vite)
 │   ├── src/
