@@ -11,11 +11,16 @@ import {
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: config.database.host,
-  port: config.database.port,
-  username: config.database.username,
-  password: config.database.password,
-  database: config.database.database,
+  ...(config.database.url
+    ? { url: config.database.url }
+    : {
+        host: config.database.host,
+        port: config.database.port,
+        username: config.database.username,
+        password: config.database.password,
+        database: config.database.database,
+      }),
+  ssl: config.database.ssl ? { rejectUnauthorized: false } : false,
   synchronize: config.database.synchronize,
   logging: config.database.logging,
   entities: [

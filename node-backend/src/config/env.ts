@@ -8,6 +8,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   host: process.env.HOST || '0.0.0.0',
   database: {
+    url: process.env.DATABASE_URL,
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'postgres',
@@ -15,7 +16,9 @@ export const config = {
     database: process.env.DB_DATABASE || 'insurance_db',
     synchronize: process.env.DB_SYNCHRONIZE !== 'false',
     logging: process.env.DB_LOGGING === 'true',
+    ssl: process.env.DB_SSL === 'true' || (process.env.DATABASE_URL?.includes('supabase') ?? false),
   },
+  autoSeed: process.env.AUTO_SEED !== 'false',
   jwt: {
     secret: process.env.JWT_SECRET || 'evolution-secret-key-2026-very-secure',
     expiresIn: parseInt(process.env.JWT_EXPIRES_IN || '86400', 10),

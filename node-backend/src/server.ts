@@ -38,8 +38,8 @@ export const startServer = async (): Promise<Hapi.Server> => {
   await server.start();
   console.log(`[Server] Hapi server running on ${server.info.uri}`);
 
-  // Auto-seed for quick start if in development
-  if (config.env === 'development') {
+  // Auto-seed for quick start / bootstrap
+  if (config.autoSeed) {
     try {
       await seedDatabase();
     } catch (seedErr) {
