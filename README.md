@@ -6,29 +6,42 @@ Plataforma integral de microservicios para la gestión aseguradora moderna, comp
 
 ## 🏛️ Arquitectura General del Sistema
 
-El ecosistema está diseñado como una arquitectura de microservicios desacoplados, contenerizados y orquestados mediante Docker Compose:
+El ecosistema está diseñado como una arquitectura de microservicios desacoplados, contenerizados y preparados tanto para orquestación local con Docker Compose como para despliegue serverless en la nube:
 
 ```
-                                 ┌─────────────────────────────────┐
-                                 │   Frontend SPA (Vite / React)   │
-                                 │      http://localhost:5173      │
-                                 └───────────────┬─────────────────┘
-                                                 │
-                        ┌────────────────────────┴────────────────────────┐
-                        │ (HTTP REST / JSON / JWT Bearer)                 │
-                        ▼                                                 ▼
-       ┌─────────────────────────────────┐               ┌─────────────────────────────────┐
-       │     node-backend (:3000)        │               │     golang-backend (:8080)      │
-       │    Traductor de Endosos         │               │     Rutas Óptimas (Grúas)       │
-       │  (Hapi.js + TypeORM + Joi)      │               │  (Go 1.23 + Dijkstra Heap)      │
-       └────────────────┬────────────────┘               └─────────────────────────────────┘
-                        │
-                        ▼
-       ┌─────────────────────────────────┐
-       │       PostgreSQL (:5432)        │
-       │   Plantillas y Catálogos        │
-       └─────────────────────────────────┘
+                             ┌─────────────────────────────────┐
+                             │   Frontend SPA (React + Vite)   │
+                             │   Cloud Run / Localhost:5173    │
+                             └───────────────┬─────────────────┘
+                                             │
+                    ┌────────────────────────┴────────────────────────┐
+                    │ (HTTP REST / JSON / JWT Bearer)                 │
+                    ▼                                                 ▼
+   ┌─────────────────────────────────┐               ┌─────────────────────────────────┐
+   │  insurance-node-backend (:3000) │               │ insurance-golang-backend (:8080)│
+   │      Traductor de Endosos       │               │      Rutas Óptimas (Grúas)      │
+   │    (Hapi.js + TypeORM + Joi)    │               │   (Go 1.23 + Dijkstra Heap)     │
+   └────────────────┬────────────────┘               └─────────────────────────────────┘
+                    │
+                    │ PostgreSQL Protocol (SSL / Port 5432)
+                    ▼
+   ┌─────────────────────────────────┐
+   │    PostgreSQL (Local / Cloud)   │
+   │  Supabase Pooler (Port 5432)    │
+   └─────────────────────────────────┘
 ```
+
+<details>
+<summary><b>Ver Diagrama Mermaid interactivo (GitHub)</b></summary>
+
+```mermaid
+graph TD
+    Client(["🌐 Navegador Web / Cliente"]) -->|"HTTPS REST / JWT"| Frontend["📱 Frontend SPA<br/>(React 18 + Vite + Nginx)"]
+    Frontend -->|"POST /v1/endorse/translate<br/>Bearer JWT"| NodeBackend["🟢 node-backend (:3000)<br/>Traductor de Endosos<br/>(Hapi.js + TypeORM + Joi)"]
+    Frontend -->|"POST /v1/routes/optimal<br/>Bearer JWT"| GoBackend["🔵 golang-backend (:8080)<br/>Rutas Óptimas Grúas<br/>(Go 1.23 + Dijkstra Heap)"]
+    NodeBackend -->|"PostgreSQL Protocol<br/>(SSL / Port 5432)"| Database[("🗄️ PostgreSQL Database<br/>(Local o Supabase Cloud)")]
+```
+</details>
 
 ### Servicios del Proyecto
 
@@ -97,7 +110,222 @@ Aplicación web moderna y reactiva desarrollada con React 18, TypeScript y Vite.
 
 ---
 
-## 🚀 Inicio Rápido con Docker Compose
+## ☁️ Arquitectura y Despliegue en la Nube (Google Cloud Run & Supabase)
+
+La plataforma está completamente preparada para operar en producción serverless con alta disponibilidad, auto-escalado a cero y separación estricta de responsabilidades.
+
+### Topología de Despliegue Cloud
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                            CLIENTES & NAVEGADORES WEB                            │
+│                             💻 Usuario / Operador Web                            │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │ HTTPS (Puerto 443)
+                                         ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│              GOOGLE CLOUD PLATFORM (Region: us-central1 | Project: swgpeqn)      │
+│                                                                                  │
+│   ┌──────────────────────────────────────────────────────────────────────────┐   │
+│   │                         ⚡ GOOGLE CLOUD RUN                              │   │
+│   │                                                                          │   │
+│   │  ┌────────────────────────┐              ┌────────────────────────────┐  │   │
+│   │  │   insurance-frontend   │──(HTTPS/JWT)─│   insurance-node-backend   │  │   │
+│   │  │   • Nginx Alpine :8080 │              │   • Hapi.js + TypeORM      │  │   │
+│   │  │   • SPA React + Vite   │──(HTTPS/JWT)─│   • Port: $PORT / 3000     │  │   │
+│   │  └────────────────────────┘              └─────────────┬──────────────┘  │   │
+│   │                │                                       │                 │   │
+│   │                │                                       │ SSL Pooler      │   │
+│   │                ▼                                       │ (Port 5432)     │   │
+│   │  ┌────────────────────────┐                            │                 │   │
+│   │  │insurance-golang-backend│                            │                 │   │
+│   │  │ • Go 1.23 (~15MB)      │                            │                 │   │
+│   │  │ • Dijkstra Multi-Source│                            │                 │   │
+│   │  └────────────────────────┘                            │                 │   │
+│   └────────────────────────────────────────────────────────┼─────────────────┘   │
+└────────────────────────────────────────────────────────────┼─────────────────────┘
+                                                             │
+                                                             ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                     SUPABASE MANAGED POSTGRESQL (AWS us-west-2)                  │
+│                                                                                  │
+│  🔌 Connection Pooler (Supavisor - Port 5432 / Session Mode / SSL Encriptado)    │
+│  🐘 PostgreSQL 15 Engine: products, endorsement_types, templates, dynamic fields │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+<details>
+<summary><b>Ver Diagrama Mermaid interactivo (GitHub)</b></summary>
+
+```mermaid
+flowchart TB
+    subgraph Users ["🌍 Clientes & Navegadores"]
+        Browser["💻 Usuario / Operador Web"]
+    end
+
+    subgraph GCP ["☁️ Google Cloud Platform (Project: swgpeqn | us-central1)"]
+        subgraph CloudRun ["⚡ Google Cloud Run (Serverless Containers)"]
+            direction TB
+            CR_FE["📱 insurance-frontend<br/>• Runtime: Nginx Alpine<br/>• Puerto: 8080<br/>• Ingress: All (HTTPS)<br/>• SPA Bundle (React + Vite)"]
+            CR_NODE["🟢 insurance-node-backend<br/>• Runtime: Node.js 20<br/>• Puerto: 3000 / $PORT<br/>• Auto-Migration & Auto-Seed<br/>• API Traductor de Endosos"]
+            CR_GO["🔵 insurance-golang-backend<br/>• Runtime: Alpine Binary (~15MB)<br/>• Puerto: 8080 / $PORT<br/>• Stateless Dijkstra Algorithm<br/>• API Rutas Óptimas de Grúas"]
+        end
+
+        subgraph GCR ["📦 Container Registry"]
+            Registry["gcr.io/swgpeqn/insurance-frontend"]
+        end
+    end
+
+    subgraph SupabaseCloud ["⚡ Supabase Managed Cloud (AWS us-west-2)"]
+        DB_POOLER["🔌 Connection Pooler (Supavisor)<br/>Port: 5432 (Session Mode) / SSL Require"]
+        DB_CORE[("🐘 PostgreSQL 15 Engine<br/>• products<br/>• endorsement_types<br/>• endorsement_templates<br/>• template_field_configs<br/>• template_event_configs")]
+        DB_POOLER --> DB_CORE
+    end
+
+    Browser -->|"1. Carga SPA (HTTPS)"| CR_FE
+    Browser -->|"2. POST /v1/endorse/translate (Bearer JWT)"| CR_NODE
+    Browser -->|"3. POST /v1/routes/optimal (Bearer JWT)"| CR_GO
+    CR_NODE -->|"Conexión segura SSL (DATABASE_URL)"| DB_POOLER
+    Registry -.->|"Despliega Imagen Contenerizada"| CR_FE
+```
+</details>
+
+### Componentes y Estrategia de Despliegue
+
+| Componente | Plataforma de Ejecución | Especificaciones de Despliegue | Configuración Clave |
+| :--- | :--- | :--- | :--- |
+| **`frontend`** | Google Cloud Run | Contenedor Nginx Alpine sirviendo el bundle compilado de Vite. Escucha en el puerto `8080` (estándar de Cloud Run) y `80`. | Construido con `--build-arg VITE_API_URL` y `--build-arg VITE_GO_API_URL` apuntando a los dominios públicos HTTPS de Cloud Run. |
+| **`node-backend`** | Google Cloud Run | Microservicio Hapi.js en Node 20. Despliegue directo mediante `--source .`. Escucha dinámicamente en el puerto asignado por Cloud Run (`$PORT`). | Conectado a Supabase vía `DATABASE_URL` (Connection Pooler con SSL `rejectUnauthorized: false`). `DB_SYNCHRONIZE=true` y auto-seed automático en el primer arranque. |
+| **`golang-backend`** | Google Cloud Run | Microservicio compilado estáticamente en CGO-free Go 1.23 sobre Alpine 3.20 (~15MB). Arranque instantáneo (<100ms) y autoescalado a 0. | Escucha en `$PORT` (8080 por defecto), CORS habilitado universalmente y validación de firma JWT compartida vía `JWT_SECRET`. |
+| **`database`** | Supabase (Free Tier) | PostgreSQL 15 administrado en la nube con Connection Pooler (Supavisor). | Modo de conexión **Session Pooler (Puerto 5432)** con soporte IPv4, evitando bloqueos de red IPv6 en Cloud Run. |
+
+### Flujo de Ejecución End-to-End
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                       ESCENARIO A: TRADUCCIÓN DE ENDOSO A JSON CORE                      │
+│                                                                                          │
+│  [1. Póliza]            [2. Token JWT]                 [4. Plantilla]                    │
+│  Usuario ──────> Frontend ──────> node-backend ──────> Supabase                          │
+│                    │                  │                   │                              │
+│                    │                  │ <─(Metadatos)─────┘                              │
+│                    │                  ▼                                                  │
+│                    │           [5. Mapeo estricto core]                                  │
+│                    │ <─(200 OK JSON)──┘                                                  │
+│  Usuario <─────────┘                                                                     │
+│  [6. Comparador]                                                                         │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                       ESCENARIO B: CÁLCULO DE RUTA ÓPTIMA DE GRÚAS                       │
+│                                                                                          │
+│  [1. Siniestro & Grúas]        [2. POST /v1/routes/optimal + JWT]                        │
+│  Usuario ────────────> Frontend ─────────────────────────> golang-backend                │
+│                           │                                      │                       │
+│                           │                                      ▼                       │
+│                           │                              [3. Multi-Source]               │
+│                           │                              [   Dijkstra Heap]              │
+│                           │ <──────(200 OK Ruta mínima)──────────┘                       │
+│  Usuario <────────────────┘                                                              │
+│  [4. Despacho y Mapa]                                                                    │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+<details>
+<summary><b>Ver Diagrama de Secuencia Mermaid interactivo (GitHub)</b></summary>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Operador / Usuario
+    participant FE as Frontend SPA (Cloud Run)
+    participant Node as node-backend (Cloud Run)
+    participant Go as golang-backend (Cloud Run)
+    participant DB as Supabase PostgreSQL
+
+    Note over User, FE: Escenario A: Traducción de Endoso a JSON Core
+    User->>FE: Ingresa póliza y presiona "Traducir Endoso"
+    FE->>Node: POST /v1/auth/token (Solicita JWT)
+    Node-->>FE: 200 OK { token }
+    FE->>Node: POST /v1/endorse/translate (Payload plano + JWT Bearer)
+    Node->>DB: SELECT plantilla por producto y tipo de endoso
+    DB-->>Node: Metadatos de campos dinámicos y eventos aplicados
+    Node->>Node: Mapea y ordena estrictamente dynamicData y eventAppliedEntities
+    Node-->>FE: 200 OK (Payload JSON estructurado core)
+    FE-->>User: Muestra payload transformado y comparador en pantalla
+
+    Note over User, Go: Escenario B: Cálculo de Ruta Óptima de Grúas
+    User->>FE: Selecciona bases de grúas y siniestro
+    FE->>Go: POST /v1/routes/optimal (Grafo vial + Depósitos + Destino + JWT)
+    Go->>Go: Ejecuta Multi-Source Dijkstra sobre priority queue (container/heap)
+    Go-->>FE: 200 OK { origen asignado, costo total, pasos de ruta }
+    FE-->>User: Renderiza métricas de despacho y camino óptimo
+```
+</details>
+
+### Guía de Despliegue en Cloud Run (PowerShell)
+
+#### 1. Configuración Inicial del Entorno
+```powershell
+# Cargar gcloud al PATH de la sesión actual
+$env:Path = "$env:LOCALAPPDATA\Google\Cloud SDK\google-cloud-sdk\bin;" + $env:Path
+
+# Autenticación y configuración del proyecto GCP
+gcloud auth login
+gcloud config set project swgpeqn
+```
+
+#### 2. Despliegue de `golang-backend`
+```powershell
+Set-Location .\golang-backend
+
+gcloud run deploy insurance-golang-backend `
+  --source . `
+  --region us-central1 `
+  --allow-unauthenticated `
+  --set-env-vars JWT_SECRET=evolution-secret-key-2026-very-secure
+```
+> Copiar la URL pública generada (ej. `https://insurance-golang-backend-736264852423.us-central1.run.app`).
+
+#### 3. Despliegue de `node-backend` conectado a Supabase
+```powershell
+Set-Location ..\node-backend
+
+gcloud run deploy insurance-node-backend `
+  --source . `
+  --region us-central1 `
+  --allow-unauthenticated `
+  "--set-env-vars=DATABASE_URL=postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres,DB_SYNCHRONIZE=true,JWT_SECRET=evolution-secret-key-2026-very-secure"
+```
+> Copiar la URL pública generada (ej. `https://insurance-node-backend-736264852423.us-central1.run.app`).
+
+#### 4. Compilación y Despliegue de `frontend`
+```powershell
+Set-Location ..\frontend
+
+# Autenticar Docker con Google Container Registry
+gcloud auth configure-docker
+
+# Compilar imagen inyectando las URLs de los microservicios Cloud Run
+docker build `
+  --build-arg VITE_API_URL="https://insurance-node-backend-736264852423.us-central1.run.app" `
+  --build-arg VITE_GO_API_URL="https://insurance-golang-backend-736264852423.us-central1.run.app" `
+  -t "gcr.io/swgpeqn/insurance-frontend:latest" .
+
+# Subir imagen al registro
+docker push "gcr.io/swgpeqn/insurance-frontend:latest"
+
+# Desplegar en Cloud Run exponiendo el puerto 8080
+gcloud run deploy insurance-frontend `
+  --image "gcr.io/swgpeqn/insurance-frontend:latest" `
+  --region us-central1 `
+  --port 8080 `
+  --allow-unauthenticated
+```
+
+---
+
+## 🚀 Inicio Rápido con Docker Compose (Local)
 
 La forma recomendada de ejecutar toda la plataforma (Base de datos, Backend Node, Backend Go y Frontend):
 
@@ -402,18 +630,28 @@ insurance-app/
 ## 🔒 Variables de Entorno
 
 ### `node-backend`
-| Variable | Descripción | Valor por Defecto (Docker) |
-| :--- | :--- | :--- |
-| `PORT` | Puerto de escucha HTTP | `3000` |
-| `DB_HOST` | Host de PostgreSQL | `postgres` |
-| `DB_PORT` | Puerto de PostgreSQL | `5432` |
-| `DB_USERNAME` | Usuario de base de datos | `postgres` |
-| `DB_PASSWORD` | Contraseña de base de datos | `postgres` |
-| `DB_DATABASE` | Nombre de la base de datos | `insurance_db` |
-| `JWT_SECRET` | Clave secreta para firma de tokens JWT | `evolution-secret-key-2026-very-secure` |
+| Variable | Descripción | Valor por Defecto (Local / Docker) | Configuración en Producción (Cloud Run) |
+| :--- | :--- | :--- | :--- |
+| `PORT` | Puerto de escucha HTTP | `3000` | Inyectado automáticamente por Cloud Run (`8080`) |
+| `DATABASE_URL` | URI de conexión completa a PostgreSQL | *(Opcional en local)* | `postgresql://postgres.[REF]:[PASS]@[HOST]:5432/postgres` (Supabase Pooler) |
+| `DB_HOST` | Host de PostgreSQL (si no se usa `DATABASE_URL`) | `postgres` o `localhost` | - |
+| `DB_PORT` | Puerto de PostgreSQL | `5432` | `5432` (Session Pooler) |
+| `DB_USERNAME` | Usuario de base de datos | `postgres` | Usuario Supabase |
+| `DB_PASSWORD` | Contraseña de base de datos | `postgres` | Contraseña URL-encoded de Supabase |
+| `DB_DATABASE` | Nombre de la base de datos | `insurance_db` | `postgres` |
+| `DB_SYNCHRONIZE` | Sincronización automática de esquemas TypeORM | `'true'` | `'true'` para auto-migración de tablas en arranque |
+| `DB_SSL` | Habilitar conexión encriptada SSL | `'false'` | `'true'` (autodetectado si `DATABASE_URL` contiene Supabase) |
+| `AUTO_SEED` | Ejecutar seeder de catálogos y plantillas en arranque | `'true'` | `'true'` (idempotente) |
+| `JWT_SECRET` | Clave secreta para firma de tokens JWT | `evolution-secret-key-2026-very-secure` | Secreto seguro de producción |
 
 ### `golang-backend`
-| Variable | Descripción | Valor por Defecto (Docker) |
-| :--- | :--- | :--- |
-| `PORT` | Puerto de escucha HTTP | `8080` |
-| `JWT_SECRET` | Clave secreta compartida para validar tokens JWT | `evolution-secret-key-2026-very-secure` |
+| Variable | Descripción | Valor por Defecto (Local / Docker) | Configuración en Producción (Cloud Run) |
+| :--- | :--- | :--- | :--- |
+| `PORT` | Puerto de escucha HTTP | `8080` | Inyectado automáticamente por Cloud Run (`8080`) |
+| `JWT_SECRET` | Clave secreta compartida para validar tokens JWT | `evolution-secret-key-2026-very-secure` | Mismo secreto compartido que `node-backend` |
+
+### `frontend` (Build Arguments)
+| Argumento de Build | Descripción | Valor por Defecto (Local / Docker) | Valor en Producción (Cloud Run) |
+| :--- | :--- | :--- | :--- |
+| `VITE_API_URL` | URL base del microservicio `node-backend` | `http://localhost:3000` | `https://insurance-node-backend-736264852423.us-central1.run.app` |
+| `VITE_GO_API_URL` | URL base del microservicio `golang-backend` | `http://localhost:8080` | `https://insurance-golang-backend-736264852423.us-central1.run.app` |
